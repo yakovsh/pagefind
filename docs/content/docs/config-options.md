@@ -112,6 +112,16 @@ Keeps `index.html` at the end of search result paths. By default, a file at `ani
 |--------------------|------------------|------------------|
 | `--keep-index-url` | `KEEP_INDEX_URL` | `keep_index_url` |
 
+### Fragment group length
+Fragments are the individual files that Pagefind loads to show search results. By default, Pagefind creates one file per page on your site. For very large sites, this can result in thousands of small files.
+
+Setting `fragment_group_len` will cause Pagefind to group these fragments into larger files. The value provided is the number of characters of the fragment's hash to use for grouping. For example, a value of `2` will result in at most 256 fragment files.
+
+| CLI Flag                    | ENV Variable                   | Config Key           |
+|-----------------------------|--------------------------------|----------------------|
+| `--fragment-group-len <L>` | `PAGEFIND_FRAGMENT_GROUP_LEN` | `fragment_group_len` |
+
+
 ### Write playground
 Writes the Pagefind playground files to `/playground` within your bundle directory. For most sites, this will make the Pagefind playground available at `/pagefind/playground/`.
 

@@ -133,6 +133,7 @@ config = IndexConfig(
     verbose=True,
     logfile="index.log",
     keep_index_url=True,
+    fragment_group_len=2,
     write_playground=True,
     output_path="./output",
 )

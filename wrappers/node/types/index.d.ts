@@ -56,6 +56,11 @@ export interface PagefindServiceConfig {
      * @example "<>$"
      */
     includeCharacters?: string,
+    /**
+     * If set, groups fragments into fewer files based on the first N characters of the fragment hash. 
+     * 1 groups into 16 files, 2 groups into 256, etc. Max is 10.
+     */
+    fragmentGroupLen?: number,
 }
 
 

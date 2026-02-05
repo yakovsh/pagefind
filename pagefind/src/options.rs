@@ -160,6 +160,15 @@ pub(crate) struct PagefindInboundConfig {
     #[clap(required = false, hide = true)]
     #[serde(default = "defaults::default_false")]
     pub(crate) service: bool,
+
+    #[clap(
+        long,
+        help = "If set, groups fragments into fewer files based on the first N characters of the fragment hash. 1 groups into 16 files, 2 groups into 256, etc. Max is 10 (which effectively disables grouping). If unset, each fragment remains in its own file.",
+        value_parser = clap::value_parser!(u8).range(1..=10)
+    )]
+    #[clap(required = false)]
+    #[serde(default)]
+    pub(crate) fragment_group_len: Option<u8>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Patch, TypedBuilder)]
@@ -199,6 +208,9 @@ pub struct PagefindServiceConfig {
     #[patch(as_option)]
     /// Include these characters when indexing and searching words.
     pub(crate) include_characters: Option<String>,
+    #[patch(as_option)]
+    /// The number of characters from the hash to use for grouping fragments.
+    pub(crate) fragment_group_len: Option<u8>,
 }
 
 mod defaults {
@@ -237,6 +249,7 @@ pub(crate) struct SearchOptions {
     pub(crate) write_playground: bool,
     pub(crate) config_warnings: ConfigWarnings,
     pub(crate) index_chunk_size: usize,
+    pub(crate) fragment_group_len: Option<u8>,
 }
 
 #[derive(Debug, Clone)]
@@ -325,6 +338,7 @@ impl SearchOptions {
                     .ok()
                     .and_then(|s| s.parse().ok())
                     .unwrap_or(defaults::default_index_chunk_size()),
+                fragment_group_len: config.fragment_group_len,
             })
         }
     }

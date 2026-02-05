@@ -64,6 +64,10 @@ class IndexConfig(TypedDict, total=False):
     The folder to output the search bundle into, relative to the processed site.
     Defaults to ``pagefind``.
     """
+    fragment_group_len: Optional[int]
+    """
+    If set, groups fragments into fewer files based on the first N characters of the fragment hash.
+    """
 
 
 class PagefindIndex:

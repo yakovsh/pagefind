@@ -383,5 +383,14 @@ impl SearchState {
                 .strip_prefix(&self.options.working_directory)
                 .unwrap_or(&self.options.bundle_output)
         ));
+
+        match self.options.fragment_group_len {
+            Some(len) => log.info(format!(
+                "Fragments:    Grouped by the first {} character{} of their hash",
+                len,
+                if len == 1 { "" } else { "s" }
+            )),
+            None => log.v_info("Fragments:    Individually bundled"),
+        }
     }
 }

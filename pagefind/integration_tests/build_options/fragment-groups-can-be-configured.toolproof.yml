@@ -1,0 +1,37 @@
+name: Build Options > Fragment groups can be configured
+steps:
+  - ref: ./background.toolproof.yml
+  - step: I have a "public/index.html" file with the content {html}
+    html: >-
+      <!DOCTYPE html><html lang="en"><head></head><body><h1>Hello world</h1></body></html>
+  - step: I have a "public/page/index.html" file with the content {html}
+    html: >-
+      <!DOCTYPE html><html lang="en"><head></head><body><h1>Another page</h1><p>Some unique content here.</p></body></html>
+  - step: I have a "public/page2/index.html" file with the content {html}
+    html: >-
+      <!DOCTYPE html><html lang="en"><head></head><body><h1>Third page</h1><p>More unique content.</p></body></html>
+  - step: I have a "public/page3/index.html" file with the content {html}
+    html: >-
+      <!DOCTYPE html><html lang="en"><head></head><body><h1>Fourth page</h1><p>Even more unique content.</p></body></html>
+  - step: I have a "public/page4/index.html" file with the content {html}
+    html: >-
+      <!DOCTYPE html><html lang="en"><head></head><body><h1>Fifth page</h1><p>Unique content five.</p></body></html>
+  - macro: I run Pagefind with "--fragment-group-len 5"
+  - step: stdout should contain "Running Pagefind"
+  - step: The file "public/pagefind/pagefind.js" should not be empty
+  - step: I run "ls public/pagefind/fragment"
+  - step: I run "sh -c 'ls public/pagefind/fragment | wc -l | xargs'"
+  - step: stdout should contain "5"
+  - step: I serve the directory "public"
+  - step: In my browser, I load "/"
+  - step: In my browser, I evaluate {js}
+    js: |-
+      let pagefind = await import("/pagefind/pagefind.js");
+      let search = await pagefind.search("five");
+      let data = await search.results[0].data();
+      document.body.innerHTML = `<div id="result">${data.content}</div>`;
+  - step: In my browser, the console should be empty
+  - step: In my browser, I evaluate {js}
+    js: |-
+      let val = await toolproof.querySelector("#result");
+      toolproof.assert_eq(val.innerHTML, `Fifth page. Unique content five.`);

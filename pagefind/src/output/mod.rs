@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::io::Write;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -146,6 +147,7 @@ async fn write_common(
             )
         })),
         include_characters: options.include_characters.clone(),
+        fragment_group_len: options.fragment_group_len,
     };
     let encoded_entry_meta = serde_json::to_string(&entry_meta).unwrap();
 
@@ -318,6 +320,32 @@ impl PagefindIndexes {
         } else {
             WriteBehavior::Immutable
         };
+        
+        let grouped_fragments: Vec<(String, String)> = if let Some(group_len) = options.fragment_group_len.filter(|&l| l > 0) {
+            let mut grouped: BTreeMap<String, BTreeMap<&String, Box<serde_json::value::RawValue>>> =
+                BTreeMap::new();
+            for (hash, fragment) in self.fragments.iter() {
+                let prefix = hash.chars().take(group_len as usize).collect::<String>();
+                let raw_fragment = serde_json::value::RawValue::from_string(fragment.clone())
+                    .expect("Fragment should be valid JSON");
+                grouped
+                    .entry(prefix)
+                    .or_default()
+                    .insert(hash, raw_fragment);
+            }
+
+            grouped.into_iter().map(|(prefix, bundle)| {
+                let filename = if prefix.is_empty() {
+                    format!("fragment/{}.pf_fragment", self.language)
+                } else {
+                    format!("fragment/{}_{}.pf_fragment", self.language, prefix)
+                };
+                let bundle_json = serde_json::to_string(&bundle).unwrap();
+                (filename, bundle_json)
+            }).collect()
+        } else {
+            Vec::new()
+        };
 
         let mut files = vec![write(
             outdir.join(format!("pagefind.{}.pf_meta", &self.meta_index.0)),
@@ -350,14 +378,25 @@ impl PagefindIndexes {
             }
         }
 
-        files.extend(self.fragments.iter().map(|(hash, fragment)| {
-            write(
-                outdir.join(format!("fragment/{}.pf_fragment", hash)),
-                vec![fragment.as_bytes()],
-                Compress::GZ,
-                immutable_write_behaviour,
-            )
-        }));
+        if options.fragment_group_len.filter(|&l| l > 0).is_some() {
+            for (filename, bundle_json) in grouped_fragments.iter() {
+                files.push(write(
+                    outdir.join(filename),
+                    vec![bundle_json.as_bytes()],
+                    Compress::GZ,
+                    immutable_write_behaviour,
+                ));
+            }
+        } else {
+            for (hash, fragment) in self.fragments.iter() {
+                files.push(write(
+                    outdir.join(format!("fragment/{}.pf_fragment", hash)),
+                    vec![fragment.as_bytes()],
+                    Compress::GZ,
+                    immutable_write_behaviour,
+                ));
+            }
+        }
 
         files.extend(self.word_indexes.iter().map(|(hash, index)| {
             write(
@@ -434,8 +473,8 @@ async fn write(
     match compression {
         Compress::GZ => {
             let mut gz = GzEncoder::new(Vec::new(), Compression::best());
+            gz.write_all(b"pagefind_dcd").unwrap();
             for chunk in content_chunks {
-                gz.write_all(b"pagefind_dcd").unwrap();
                 gz.write_all(chunk).unwrap();
             }
             if let Ok(contents) = gz.finish() {

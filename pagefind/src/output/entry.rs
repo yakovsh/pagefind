@@ -7,6 +7,7 @@ pub struct PagefindEntryMeta {
     pub version: &'static str,
     pub languages: HashMap<String, PagefindEntryLanguage>,
     pub include_characters: Vec<char>,
+    pub fragment_group_len: Option<u8>,
 }
 
 #[derive(Serialize, Debug)]

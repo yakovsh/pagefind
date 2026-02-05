@@ -59,6 +59,7 @@ export const createIndex = (config) => new Promise((resolve, reject) => {
                 keep_index_url: config?.keepIndexUrl,
                 write_playground: config?.writePlayground,
                 include_characters: config?.includeCharacters,
+                fragment_group_len: config?.fragmentGroupLen,
             }
         }, (response) => {
             /** @type {function(InternalResponsePayload): Omit<NewIndexResponse, 'errors'>?} */
@@ -80,7 +81,7 @@ export const createIndex = (config) => new Promise((resolve, reject) => {
 /**
  * @type {import('pagefindService').close} 
  */
-export const close = () => new Promise((resolve, reject) => {
+export const close = () => new Promise((resolve) => {
     persistentService?.close(null);
     persistentService = null;
     resolve(null);

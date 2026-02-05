@@ -4,6 +4,7 @@ export type PagefindEntryJson = {
   version: string;
   languages: Record<string, PagefindEntryLanguage>;
   include_characters: string[];
+  fragment_group_len?: number;
 };
 
 export type PagefindEntryLanguage = {

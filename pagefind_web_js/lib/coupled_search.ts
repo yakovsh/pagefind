@@ -51,6 +51,7 @@ export class PagefindInstance {
   languages: Record<string, internal.PagefindEntryLanguage> | null;
   loadedLanguage?: string;
   includeCharacters?: string[];
+  fragmentGroupLen?: number;
 
   version: string;
   loadedVersion?: string;
@@ -100,6 +101,7 @@ export class PagefindInstance {
     this.raw_ptr = null;
     this.searchMeta = null;
     this.languages = null;
+    this.fragmentGroupLen = undefined;
   }
 
   private initPrimaryBasePath(basePath: string): string {
@@ -233,6 +235,7 @@ export class PagefindInstance {
       this.languages = entry_json.languages;
       this.loadedVersion = entry_json.version;
       this.includeCharacters = entry_json.include_characters ?? [];
+      this.fragmentGroupLen = entry_json.fragment_group_len ?? undefined;
       if (entry_json.version !== this.version) {
         if (this.primary) {
           console.warn(
@@ -346,15 +349,29 @@ export class PagefindInstance {
   }
 
   async _loadFragment(hash: string) {
-    let compressed_resp = await fetch(
-      `${this.basePath}fragment/${hash}.pf_fragment`,
-    );
+    let url = `${this.basePath}fragment/${hash}.pf_fragment`;
+    if (this.fragmentGroupLen != null) {
+      const prefix = hash.length >= this.fragmentGroupLen ? hash.slice(0, this.fragmentGroupLen) : "";
+      if (prefix.length > 0) {
+        url = `${this.basePath}fragment/${this.loadedLanguage}_${prefix}.pf_fragment`;
+      } else {
+        url = `${this.basePath}fragment/${this.loadedLanguage}.pf_fragment`;
+      }
+    }
+
+    let compressed_resp = await fetch(url);
     let compressed_fragment = await compressed_resp.arrayBuffer();
-    let fragment = this.decompress(
+    let fragment_data = this.decompress(
       new Uint8Array(compressed_fragment),
       `Fragment ${hash}`,
     );
-    return JSON.parse(new TextDecoder().decode(fragment));
+    let fragment_json = JSON.parse(new TextDecoder().decode(fragment_data));
+
+    if (this.fragmentGroupLen != null) {
+      return fragment_json[hash];
+    } else {
+      return fragment_json;
+    }
   }
 
   async loadFragment(

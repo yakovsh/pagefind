@@ -34,6 +34,7 @@ export interface InternalPagefindServiceConfig {
     keep_index_url?: boolean,
     write_playground?: boolean,
     include_characters?: string,
+    fragment_group_len?: number,
 }
 
 export interface InternalAddFileRequest {
